@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrderFlow — Control Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6fa;
+  --sidebar:#ffffff;
+  --surface:#ffffff;
+  --card:#ffffff;
+  --border:#e8eaef;
+  --border2:#f0f1f5;
+  --text:#1a1d2e;
+  --muted:#9196a8;
+  --muted2:#6b7280;
+  --accent:#4361ee;
+  --accent-light:#eef0fd;
+  --accent2:#3a56e0;
+  --green:#16a34a;
+  --green-light:#f0fdf4;
+  --green-border:#bbf7d0;
+  --amber:#d97706;
+  --amber-light:#fffbeb;
+  --amber-border:#fde68a;
+  --red:#dc2626;
+  --red-light:#fef2f2;
+  --red-border:#fecaca;
+  --cyan:#0891b2;
+  --cyan-light:#ecfeff;
+  --purple:#7c3aed;
+  --purple-light:#f5f3ff;
+  --ff-d:'Plus Jakarta Sans',sans-serif;
+  --ff-m:'DM Mono',monospace;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow:0 4px 16px rgba(0,0,0,.07),0 1px 4px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 40px rgba(0,0,0,.1),0 2px 8px rgba(0,0,0,.05);
+  --radius:14px;
+  --radius-sm:9px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--ff-d);font-size:13.5px;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ── LAYOUT ── */
+.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:11px;padding:24px 20px 20px;border-bottom:1px solid var(--border2)}
+.brand-icon{width:34px;height:34px;border-radius:10px;background:var(--accent);display:grid;place-items:center;font-size:16px;flex-shrink:0;box-shadow:0 4px 12px rgba(67,97,238,.3)}
+.brand-name{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.4px;line-height:1.1}
+.brand-sub{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;display:block;margin-top:1px}
+
+.nav-section{padding:18px 12px 4px}
+.nav-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);padding:0 8px 8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;color:var(--muted2);font-size:13px;font-weight:500;transition:all .15s;border-radius:var(--radius-sm);margin-bottom:2px;user-select:none}
+.nav-item:hover{color:var(--text);background:var(--bg)}
+.nav-item.active{color:var(--accent);background:var(--accent-light);font-weight:600}
+.nav-item svg{flex-shrink:0;opacity:.7}
+.nav-item.active svg{opacity:1}
+.nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;font-family:var(--ff-m)}
+
+.sidebar-divider{height:1px;background:var(--border2);margin:10px 20px}
+
+.pinned-section{padding:10px 12px}
+.pinned-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);padding:0 8px 8px}
+.pinned-item{display:flex;align-items:center;gap:9px;padding:7px 10px;cursor:pointer;color:var(--muted2);font-size:12.5px;font-weight:500;border-radius:7px;margin-bottom:1px;transition:background .12s}
+.pinned-item:hover{background:var(--bg)}
+.pinned-dot{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:11px;flex-shrink:0}
+.pinned-role{margin-left:auto;font-size:11px;color:var(--muted);font-weight:400}
+
+.sidebar-foot{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border2)}
+.sys-status{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;color:var(--muted2)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 2s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 0 2px rgba(22,163,74,.2)}50%{opacity:.5;box-shadow:none}}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;min-width:0}
+
+/* ── TOPBAR ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:60px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.tb-left{display:flex;flex-direction:column;gap:1px}
+.page-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+.crumb{font-size:11px;color:var(--muted);font-weight:400}
+.crumb span{color:var(--accent);font-weight:500}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:500;color:var(--muted2);background:var(--surface);cursor:default}
+.tb-pill.online{border-color:var(--green-border);color:var(--green);background:var(--green-light)}
+.tb-pill.azure{border-color:#bfdbfe;color:#2563eb;background:#eff6ff}
+.tb-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--ff-d);font-size:12.5px;font-weight:600;color:var(--muted2);background:var(--surface);cursor:pointer;transition:all .14s;box-shadow:var(--shadow-sm)}
+.tb-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.tb-btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 4px 12px rgba(67,97,238,.25)}
+.tb-btn-primary:hover{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+
+/* ── CONTENT ── */
+.content{padding:26px 28px;flex:1}
+.section{display:none}.section.active{display:block}
+
+/* ── WELCOME BAR ── */
+.welcome{margin-bottom:22px}
+.welcome h1{font-size:22px;font-weight:800;letter-spacing:-.4px;color:var(--text)}
+.welcome p{font-size:13px;color:var(--muted2);margin-top:3px;font-weight:400}
+.welcome-row{display:flex;align-items:flex-end;justify-content:space-between}
+
+/* ── STAT CARDS ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm);animation:rise .35s ease both;cursor:default;transition:box-shadow .15s,transform .15s}
+.stat:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.stat:nth-child(1){animation-delay:.04s}.stat:nth-child(2){animation-delay:.08s}
+.stat:nth-child(3){animation-delay:.12s}.stat:nth-child(4){animation-delay:.16s}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.stat-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:16px}
+.stat-icon.blue{background:var(--accent-light)}
+.stat-icon.green{background:var(--green-light)}
+.stat-icon.amber{background:var(--amber-light)}
+.stat-icon.cyan{background:var(--cyan-light)}
+.stat-delta{font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px}
+.stat-delta.up{color:var(--green);background:var(--green-light)}
+.stat-delta.dn{color:var(--red);background:var(--red-light)}
+.stat-delta.neu{color:var(--amber);background:var(--amber-light)}
+.s-val{font-size:28px;font-weight:800;letter-spacing:-1px;color:var(--text);line-height:1}
+.s-label{font-size:12px;font-weight:500;color:var(--muted2);margin-top:4px}
+.s-sub{font-size:11.5px;color:var(--muted);margin-top:6px}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
+.g31{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;animation:rise .38s ease both}
+.card:hover{box-shadow:var(--shadow)}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 14px;border-bottom:1px solid var(--border2)}
+.ch h3{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.2px}
+.ch .meta{font-size:12px;color:var(--muted);font-weight:400}
+.ch-actions{display:flex;align-items:center;gap:8px}
+.cb{padding:20px}
+
+/* ── SECTION HEADER ── */
+.sec-header{margin-bottom:20px}
+.sec-header h2{font-size:20px;font-weight:800;letter-spacing:-.4px;color:var(--text)}
+.sec-header p{font-size:12.5px;color:var(--muted2);margin-top:3px}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse}
+.tbl thead tr{background:var(--bg)}
+.tbl th{text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border)}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--border2);font-size:13px;font-weight:400;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover{background:#fafbff}
+td.idd{font-family:var(--ff-m);font-size:11.5px;color:var(--muted);font-weight:400}
+td.mono{font-family:var(--ff-m);font-size:12px;color:var(--muted2)}
+td.bold{font-weight:600;color:var(--text)}
+
+/* ── STATUS BADGE ── */
+.bst{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.bst .bd{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.bst.created{color:#4361ee;background:var(--accent-light);border:1px solid #c7d0fb}
+.bst.processing{color:var(--amber);background:var(--amber-light);border:1px solid var(--amber-border)}
+.bst.completed{color:var(--green);background:var(--green-light);border:1px solid var(--green-border)}
+.bst.failed{color:var(--red);background:var(--red-light);border:1px solid var(--red-border)}
+
+/* ── METRIC STRIP ── */
+.mstrip{display:grid;grid-template-columns:repeat(5,1fr);gap:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:16px}
+.mi{padding:14px 18px;border-right:1px solid var(--border2)}
+.mi:last-child{border-right:none}
+.mi-label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px}
+.mi-val{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.3px;line-height:1}
+.mi-sub{font-size:11px;color:var(--muted);margin-top:3px;font-weight:400}
+.ep{display:inline-flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:11px;font-family:var(--ff-m);color:var(--muted2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}
+.m-post{background:var(--accent-light);color:var(--accent);padding:1px 5px;border-radius:4px;font-size:9.5px;font-weight:700;flex-shrink:0}
+.m-get{background:var(--green-light);color:var(--green);padding:1px 5px;border-radius:4px;font-size:9.5px;font-weight:700;flex-shrink:0}
+
+/* ── BARS ── */
+.bar-wrap{display:flex;flex-direction:column;gap:12px}
+.bar-row{display:flex;align-items:center;gap:12px}
+.bar-lbl{font-size:12px;font-weight:500;color:var(--muted2);width:100px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:6px;background:var(--bg);border-radius:20px;overflow:hidden;border:1px solid var(--border2)}
+.bar-fill{height:100%;border-radius:20px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.bar-num{font-size:12px;font-weight:600;color:var(--text);width:28px;text-align:right;flex-shrink:0}
+
+/* ── DONUT ── */
+.donut-wrap{display:flex;align-items:center;gap:24px;justify-content:center;padding:8px 0}
+.donut-legend{display:flex;flex-direction:column;gap:10px}
+.leg-row{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500}
+.leg-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.leg-lbl{color:var(--muted2)}
+.leg-num{margin-left:auto;font-weight:700;font-size:14px;color:var(--text);min-width:28px;text-align:right}
+
+/* ── PIPELINE FLOW ── */
+.flow{display:flex;align-items:center;gap:0;padding:24px 20px;overflow-x:auto}
+.fn{flex:1;min-width:100px;text-align:center;padding:16px 10px}
+.fn-ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:20px;margin:0 auto 10px;border:1px solid var(--border)}
+.fn.blue .fn-ico{background:var(--accent-light);border-color:#c7d0fb}
+.fn.green .fn-ico{background:var(--green-light);border-color:var(--green-border)}
+.fn.amber .fn-ico{background:var(--amber-light);border-color:var(--amber-border)}
+.fn.purple .fn-ico{background:var(--purple-light);border-color:#ddd6fe}
+.fn.cyan .fn-ico{background:var(--cyan-light);border-color:#a5f3fc}
+.fn-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);display:block}
+.fn-name{font-size:13px;font-weight:700;color:var(--text);display:block;margin-top:2px}
+.farrow{flex-shrink:0;display:flex;flex-direction:column;align-items:center;color:var(--border);font-size:18px;padding:0 4px}
+.farrow .proto{font-size:10px;color:var(--muted);font-weight:500;margin-top:2px;font-family:var(--ff-m)}
+
+/* ── FORM ── */
+.form{display:flex;flex-direction:column;gap:16px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:600;color:var(--text);letter-spacing:-.1px}
+.field input,.field select{background:var(--bg);border:1.5px solid var(--border);color:var(--text);padding:10px 13px;border-radius:var(--radius-sm);font-family:var(--ff-d);font-size:13px;font-weight:400;outline:none;transition:border .14s,box-shadow .14s;-webkit-appearance:none}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(67,97,238,.1);background:#fff}
+.field input::placeholder{color:var(--muted)}
+.field select option{background:#fff}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 20px;border-radius:var(--radius-sm);cursor:pointer;font-family:var(--ff-d);font-size:13px;font-weight:600;transition:all .14s;border:none;display:inline-flex;align-items:center;gap:7px}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(67,97,238,.28)}
+.btn-primary:hover{background:var(--accent2);box-shadow:0 6px 20px rgba(67,97,238,.35);transform:translateY(-1px)}
+.btn-primary:active{transform:none}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-secondary{background:#fff;color:var(--text);border:1.5px solid var(--border);box-shadow:var(--shadow-sm)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.icon-btn{background:#fff;border:1.5px solid var(--border);color:var(--muted2);padding:7px 12px;border-radius:var(--radius-sm);cursor:pointer;font-family:var(--ff-d);font-size:12.5px;font-weight:500;transition:all .13s;box-shadow:var(--shadow-sm)}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+
+/* ── LOGS ── */
+.log-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;font-family:var(--ff-m);font-size:11.5px;line-height:2;max-height:320px;overflow-y:auto;color:var(--muted2)}
+.ll{display:flex;gap:12px}
+.ts{color:var(--muted);flex-shrink:0;user-select:none}
+.ll.info .lv{color:var(--accent)}.ll.ok .lv{color:var(--green)}.ll.warn .lv{color:var(--amber)}.ll.err .lv{color:var(--red)}
+
+/* ── CONFIG ROW ── */
+.cfg-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border2)}
+.cfg-row:last-child{border-bottom:none}
+.cfg-k{font-size:13px;font-weight:500;color:var(--muted2)}
+.cfg-v{font-size:12.5px;font-weight:600;color:var(--text);font-family:var(--ff-m);text-align:right}
+
+/* ── TOAST ── */
+.toasts{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;min-width:280px;max-width:360px;background:#fff;border:1px solid var(--border);box-shadow:var(--shadow-lg);animation:tin .22s ease;font-size:13px;font-weight:500}
+.toast.success{border-left:3px solid var(--green)}.toast.error{border-left:3px solid var(--red)}.toast.warn{border-left:3px solid var(--amber)}.toast.info{border-left:3px solid var(--accent)}
+.toast .ti{font-size:16px}.toast .tm{flex:1;color:var(--text)}.toast .tc{color:var(--muted);cursor:pointer;font-size:16px;font-weight:300}
+@keyframes tin{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+/* ── SPINNER ── */
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .55s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty .ei{font-size:28px;margin-bottom:8px}
+.empty p{font-size:12.5px;font-weight:500}
+
+/* ── SELECT STYLED ── */
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239196a8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:32px !important}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+
+/* ── PIPELINE STATUS SIDEBAR ── */
+.pipe-box{margin:6px 12px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:12px 14px}
+.pipe-box h5{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px}
+.p-step{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px;font-weight:500;color:var(--muted2)}
+.p-dot{width:6px;height:6px;border-radius:50%;background:var(--border);flex-shrink:0}
+.p-step.ok .p-dot{background:var(--green)}
+.p-step.ok{color:var(--text)}
+.p-chk{margin-left:auto;color:var(--green);font-size:11px;font-weight:700}
+
+/* ── REQ PREVIEW ── */
+.req-prev-wrap{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-size:12px;font-family:var(--ff-m);color:var(--muted2);line-height:1.8}
+.req-method{color:var(--accent);font-weight:600}
+.req-url{color:var(--text);font-weight:500}
+
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}.sidebar{display:none}
+  .stats{grid-template-columns:repeat(2,1fr)}.g2,.g3,.g31,.mstrip{grid-template-columns:1fr}
+  .mstrip{display:flex;flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">⬡</div>
+    <div>
+      <div class="brand-name">OrderFlow</div>
+      <span class="brand-sub">Azure Event System</span>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" onclick="nav('dashboard',this)">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Dashboard Modules
+      </div>
+      <div class="nav-item" onclick="nav('orders',this)">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+        Order Directory
+        <span class="nav-badge" id="nb-orders">—</span>
+      </div>
+      <div class="nav-item" onclick="nav('submit',this)">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+        Submit Order
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="nav-section">
+      <div class="nav-label">System</div>
+      <div class="nav-item" onclick="nav('pipeline',this)">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><path d="M7 12h4M14 12h3M12 7v10"/></svg>
+        Pipeline
+      </div>
+      <div class="nav-item" onclick="nav('logs',this)">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h10M4 18h7"/></svg>
+        Activity Logs
+      </div>
+      <div class="nav-item" onclick="nav('config',this)">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Configuration
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="pinned-section">
+      <div class="pinned-label">Quick Access</div>
+      <div class="pinned-item">
+        <div class="pinned-dot" style="background:#eff6ff">☁</div>
+        Azure Portal
+        <span class="pinned-role">External</span>
+      </div>
+      <div class="pinned-item">
+        <div class="pinned-dot" style="background:#f0fdf4">🗄</div>
+        PostgreSQL
+        <span class="pinned-role">B1ms</span>
+      </div>
+      <div class="pinned-item">
+        <div class="pinned-dot" style="background:#fffbeb">📨</div>
+        Service Bus
+        <span class="pinned-role">Basic</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="pipe-box">
+    <h5>Pipeline Health</h5>
+    <div class="p-step ok"><div class="p-dot"></div>API Management<span class="p-chk">✓</span></div>
+    <div class="p-step ok"><div class="p-dot"></div>createOrder fn<span class="p-chk">✓</span></div>
+    <div class="p-step ok"><div class="p-dot"></div>Service Bus<span class="p-chk">✓</span></div>
+    <div class="p-step ok"><div class="p-dot"></div>processOrder fn<span class="p-chk">✓</span></div>
+    <div class="p-step ok"><div class="p-dot"></div>PostgreSQL<span class="p-chk">✓</span></div>
+    <div class="p-step ok"><div class="p-dot"></div>getOrders fn<span class="p-chk">✓</span></div>
+  </div>
+
+  <div class="sidebar-foot">
+    <div class="sys-status"><div class="live-dot"></div>All systems operational</div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <header class="topbar">
+    <div class="tb-left">
+      <div class="page-title" id="page-title">Welcome back, Praneeth </div>
+      <div class="crumb">orderflow / <span id="crumb-leaf">dashboard</span></div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-pill azure">☁ Azure for Students</div>
+      <div class="tb-pill online"><span class="live-dot" style="width:6px;height:6px"></span>East Asia</div>
+      <button class="tb-btn" onclick="refreshAll()">↻ &nbsp;Refresh</button>
+      <button class="tb-btn tb-btn-primary" onclick="nav('submit', document.querySelectorAll('.nav-item')[2])">+ &nbsp;New Order</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <section class="section active" id="s-dashboard">
+      <div class="welcome-row" style="margin-bottom:20px">
+        <div class="welcome">
+          <h1>Sales &amp; Business Overview</h1>
+          <p>Track order performance and pipeline health through real-time insights from your Azure stack</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select style="background:#fff;border:1.5px solid var(--border);color:var(--text);padding:7px 32px 7px 12px;border-radius:var(--radius-sm);font-family:var(--ff-d);font-size:12.5px;font-weight:500;outline:none;box-shadow:var(--shadow-sm)">
+            <option>All Time</option><option>Today</option><option>This Week</option>
+          </select>
+          <button class="icon-btn">+ Add widget</button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-top">
+            <span class="stat-delta up" id="d-today">↑ 0</span>
+          </div>
+          <div class="s-val" id="m-total">—</div>
+          <div class="s-label">Total Orders</div>
+          <div class="s-sub" id="m-sub-total">Loading…</div>
+        </div>
+        <div class="stat">
+          <div class="stat-top">
+            <span class="stat-delta up" id="d-pct">—</span>
+          </div>
+          <div class="s-val" id="m-done">—</div>
+          <div class="s-label">Completed</div>
+          <div class="s-sub">Success rate</div>
+        </div>
+        <div class="stat">
+          <div class="stat-top">
+            <span class="stat-delta neu">In pipeline</span>
+          </div>
+          <div class="s-val" id="m-pipe">—</div>
+          <div class="s-label">Processing</div>
+          <div class="s-sub">Created + active</div>
+        </div>
+        <div class="stat">
+          <div class="stat-top">
+            <span class="stat-delta up">Fast</span>
+          </div>
+          <div class="s-val">&lt;2s</div>
+          <div class="s-label">Avg. Latency</div>
+          <div class="s-sub">Service Bus → DB</div>
+        </div>
+      </div>
+
+      <div class="mstrip">
+        <div class="mi">
+          <div class="mi-label">POST Endpoint</div>
+          <div class="ep"><span class="m-post">POST</span>/v1/createOrder</div>
+        </div>
+        <div class="mi">
+          <div class="mi-label">GET Endpoint</div>
+          <div class="ep"><span class="m-get">GET</span>/v2/getOrders</div>
+        </div>
+        <div class="mi">
+          <div class="mi-label">Message Queue</div>
+          <div class="mi-val">orders</div>
+          <div class="mi-sub">Service Bus · Basic</div>
+        </div>
+        <div class="mi">
+          <div class="mi-label">Database</div>
+          <div class="mi-val">PostgreSQL</div>
+          <div class="mi-sub">Flexible · B1ms · 32 GB</div>
+        </div>
+        <div class="mi">
+          <div class="mi-label">Runtime</div>
+          <div class="mi-val">Python 3.11</div>
+          <div class="mi-sub">Linux · Consumption</div>
+        </div>
+      </div>
+
+      <div class="g3">
+        <div class="card">
+          <div class="ch">
+            <h3>Revenue Growth Pattern</h3>
+            <div class="ch-actions">
+              <span class="meta">Recent orders</span>
+              <button class="icon-btn" onclick="loadOrders()" style="padding:5px 9px;font-size:11px">↻</button>
+            </div>
+          </div>
+          <div id="dash-tbl-wrap"><div class="empty"><div class="ei">⏳</div><p>Loading orders…</p></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><h3>Order Distribution</h3><span class="meta">by status</span></div>
+          <div class="cb">
+            <div class="donut-wrap">
+              <svg width="110" height="110" viewBox="0 0 110 110">
+                <circle cx="55" cy="55" r="40" fill="none" stroke="#f0f1f5" stroke-width="14"/>
+                <circle id="d-created"    cx="55" cy="55" r="40" fill="none" stroke="#4361ee" stroke-width="14" stroke-dasharray="0 251.2" stroke-linecap="round" transform="rotate(-90 55 55)" style="transition:stroke-dasharray .7s cubic-bezier(.4,0,.2,1)"/>
+                <circle id="d-completed"  cx="55" cy="55" r="40" fill="none" stroke="#16a34a" stroke-width="14" stroke-dasharray="0 251.2" stroke-linecap="round" transform="rotate(-90 55 55)" style="transition:stroke-dasharray .7s cubic-bezier(.4,0,.2,1)"/>
+                <circle id="d-processing" cx="55" cy="55" r="40" fill="none" stroke="#d97706" stroke-width="14" stroke-dasharray="0 251.2" stroke-linecap="round" transform="rotate(-90 55 55)" style="transition:stroke-dasharray .7s cubic-bezier(.4,0,.2,1)"/>
+                <circle id="d-failed"     cx="55" cy="55" r="40" fill="none" stroke="#dc2626" stroke-width="14" stroke-dasharray="0 251.2" stroke-linecap="round" transform="rotate(-90 55 55)" style="transition:stroke-dasharray .7s cubic-bezier(.4,0,.2,1)"/>
+              </svg>
+              <div class="donut-legend">
+                <div class="leg-row"><div class="leg-dot" style="background:#4361ee"></div><span class="leg-lbl">Created</span><span class="leg-num" id="l-created">—</span></div>
+                <div class="leg-row"><div class="leg-dot" style="background:#16a34a"></div><span class="leg-lbl">Completed</span><span class="leg-num" id="l-completed">—</span></div>
+                <div class="leg-row"><div class="leg-dot" style="background:#d97706"></div><span class="leg-lbl">Processing</span><span class="leg-num" id="l-processing">—</span></div>
+                <div class="leg-row"><div class="leg-dot" style="background:#dc2626"></div><span class="leg-lbl">Failed</span><span class="leg-num" id="l-failed">—</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><h3>Product Demand Insights</h3><span class="meta">top products by volume</span></div>
+          <div class="cb"><div class="bar-wrap" id="prod-bars"><div class="empty"><p>No data yet</p></div></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><h3>Customer Activity</h3><span class="meta">top customers</span></div>
+          <div class="cb"><div class="bar-wrap" id="cust-bars"><div class="empty"><p>No data yet</p></div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ ALL ORDERS ══ -->
+    <section class="section" id="s-orders">
+      <div class="sec-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <h2>Order Directory</h2>
+          <p>Live data from PostgreSQL via getOrders Azure Function</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="filter-status" style="background:#fff;border:1.5px solid var(--border);color:var(--text);padding:8px 32px 8px 12px;border-radius:var(--radius-sm);font-family:var(--ff-d);font-size:12.5px;font-weight:500;outline:none;box-shadow:var(--shadow-sm)" onchange="applyFilter()">
+            <option value="">All statuses</option>
+            <option value="CREATED">Created</option>
+            <option value="PROCESSING">Processing</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="FAILED">Failed</option>
+          </select>
+          <button class="icon-btn" onclick="loadOrders()">↻ Refresh</button>
+        </div>
+      </div>
+      <div class="card">
+        <div id="orders-tbl-wrap"><div class="empty"><div class="ei">📦</div><p>Loading…</p></div></div>
+      </div>
+    </section>
+
+    <!-- ══ SUBMIT ══ -->
+    <section class="section" id="s-submit">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px">
+        <div>
+          <div class="sec-header">
+            <h2>Submit New Order</h2>
+            <p>Client → APIM → createOrder → Service Bus → processOrder → PostgreSQL</p>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>Order Details</h3><span class="meta" id="sub-label">ready</span></div>
+            <div class="cb">
+              <div class="form">
+                <div class="frow">
+                  <div class="field"><label>Customer ID</label><input id="f-cust" type="text" placeholder="e.g. C001"/></div>
+                  <div class="field"><label>Product Name</label><input id="f-prod" type="text" placeholder="e.g. Laptop"/></div>
+                </div>
+                <div class="frow">
+                  <div class="field"><label>Quantity</label><input id="f-qty" type="number" value="1" min="1"/></div>
+                  <div class="field"><label>Category</label>
+                    <select id="f-cat"><option>Electronics</option><option>Furniture</option><option>Clothing</option><option>Books</option><option>Other</option></select>
+                  </div>
+                </div>
+                <div style="display:flex;gap:9px;padding-top:2px">
+                  <button class="btn btn-primary" id="sub-btn" onclick="submitOrder()">⬡ &nbsp;Send Order</button>
+                  <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="sec-header">
+            <h2>Request Preview</h2>
+            <p>Live payload that will be sent to APIM</p>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>HTTP Request</h3><span class="meta">application/json</span></div>
+            <div class="cb" style="padding:16px">
+              <div class="req-prev-wrap">
+                <span class="req-method">POST</span> <span class="req-url">orders-gateway-bp.azure-api.net</span><br>
+                <span style="color:var(--muted)">/v1/createOrder</span><br>
+                <span style="color:var(--muted)">Content-Type:</span> application/json<br><br>
+                <pre id="req-prev" style="color:var(--text);white-space:pre-wrap;font-size:12px">{
+  "customer_id": "—",
+  "product": "—",
+  "quantity": 1
+}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ PIPELINE ══ -->
+    <section class="section" id="s-pipeline">
+      <div class="sec-header">
+        <h2>Pipeline Architecture</h2>
+        <p>Event-driven order processing on Azure serverless — East Asia region</p>
+      </div>
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><h3>Write Path</h3><span class="meta">order submission flow</span></div>
+        <div class="flow">
+          <div class="fn blue"><div class="fn-ico">🌐</div><span class="fn-lbl">Entry</span><span class="fn-name">Client</span></div>
+          <div class="farrow">→<span class="proto">HTTPS</span></div>
+          <div class="fn blue"><div class="fn-ico">🔀</div><span class="fn-lbl">Gateway</span><span class="fn-name">API Mgmt</span></div>
+          <div class="farrow">→<span class="proto">invoke</span></div>
+          <div class="fn purple"><div class="fn-ico">⚡</div><span class="fn-lbl">HTTP Trigger</span><span class="fn-name">createOrder</span></div>
+          <div class="farrow">→<span class="proto">enqueue</span></div>
+          <div class="fn amber"><div class="fn-ico">📨</div><span class="fn-lbl">Basic Tier</span><span class="fn-name">Service Bus</span></div>
+          <div class="farrow">→<span class="proto">trigger</span></div>
+          <div class="fn purple"><div class="fn-ico">⚙️</div><span class="fn-lbl">SB Trigger</span><span class="fn-name">processOrder</span></div>
+          <div class="farrow">→<span class="proto">INSERT</span></div>
+          <div class="fn green"><div class="fn-ico">🗄️</div><span class="fn-lbl">Flexible B1ms</span><span class="fn-name">PostgreSQL</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><h3>Read Path</h3><span class="meta">dashboard → API → database</span></div>
+        <div class="flow">
+          <div class="fn cyan"><div class="fn-ico">📊</div><span class="fn-lbl">This UI</span><span class="fn-name">Dashboard</span></div>
+          <div class="farrow">→<span class="proto">GET</span></div>
+          <div class="fn blue"><div class="fn-ico">🔀</div><span class="fn-lbl">Gateway</span><span class="fn-name">API Mgmt</span></div>
+          <div class="farrow">→<span class="proto">invoke</span></div>
+          <div class="fn purple"><div class="fn-ico">⚡</div><span class="fn-lbl">HTTP Trigger</span><span class="fn-name">getOrders</span></div>
+          <div class="farrow">→<span class="proto">SELECT</span></div>
+          <div class="fn green"><div class="fn-ico">🗄️</div><span class="fn-lbl">Flexible B1ms</span><span class="fn-name">PostgreSQL</span></div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><h3>Services &amp; Tiers</h3><span class="meta">all lowest cost</span></div>
+          <div class="cb">
+            <div class="cfg-row"><span class="cfg-k">Azure Functions</span><span class="cfg-v" style="color:var(--green)">Consumption · Serverless</span></div>
+            <div class="cfg-row"><span class="cfg-k">Service Bus</span><span class="cfg-v" style="color:var(--green)">Basic tier</span></div>
+            <div class="cfg-row"><span class="cfg-k">PostgreSQL</span><span class="cfg-v" style="color:var(--green)">Flexible · B1ms · 32 GB</span></div>
+            <div class="cfg-row"><span class="cfg-k">API Management</span><span class="cfg-v" style="color:var(--green)">Consumption</span></div>
+            <div class="cfg-row"><span class="cfg-k">Monitor</span><span class="cfg-v">Azure Monitor</span></div>
+            <div class="cfg-row"><span class="cfg-k">Resource Group</span><span class="cfg-v">order-system-rg</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><h3>Queue Configuration</h3><span class="meta">Service Bus · orders</span></div>
+          <div class="cb">
+            <div class="cfg-row"><span class="cfg-k">Queue name</span><span class="cfg-v">orders</span></div>
+            <div class="cfg-row"><span class="cfg-k">Namespace</span><span class="cfg-v" style="font-size:11px">orderservicebus123</span></div>
+            <div class="cfg-row"><span class="cfg-k">Max size</span><span class="cfg-v">256 MB</span></div>
+            <div class="cfg-row"><span class="cfg-k">Lock duration</span><span class="cfg-v">60 s</span></div>
+            <div class="cfg-row"><span class="cfg-k">Dead-letter</span><span class="cfg-v" style="color:var(--amber)">not configured</span></div>
+            <div class="cfg-row"><span class="cfg-k">Message TTL</span><span class="cfg-v">14 days</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ LOGS ══ -->
+    <section class="section" id="s-logs">
+      <div class="sec-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div><h2>Activity Logs</h2><p>Real-time session activity — all API calls and events</p></div>
+        <button class="icon-btn" onclick="clearLogs()">✕ Clear</button>
+      </div>
+      <div class="card"><div class="cb"><div class="log-box" id="log-box"></div></div></div>
+    </section>
+
+    <!-- ══ CONFIG ══ -->
+    <section class="section" id="s-config">
+      <div class="sec-header"><h2>Configuration</h2><p>Update API endpoints without modifying code</p></div>
+      <div style="max-width:560px;display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="ch"><h3>API Endpoints</h3></div>
+          <div class="cb">
+            <div class="form">
+              <div class="field"><label>POST — createOrder URL</label><input id="cfg-post" type="text" value="https://orders-gateway-bp.azure-api.net/v1/createOrder"/></div>
+              <div class="field"><label>GET — getOrders URL</label><input id="cfg-get" type="text" value="https://orders-gateway-bp.azure-api.net/v2/getOrders"/></div>
+              <div class="field"><label>APIM Subscription Key <span style="color:var(--muted);font-weight:400">(optional)</span></label><input id="cfg-key" type="text" placeholder="Ocp-Apim-Subscription-Key"/></div>
+              <button class="btn btn-primary" onclick="saveConfig()" style="width:fit-content">Save Configuration</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><h3>Active Settings</h3></div>
+          <div class="cb">
+            <div class="cfg-row"><span class="cfg-k">POST endpoint</span><span class="cfg-v" id="disp-post" style="font-size:11px">…/v1/createOrder</span></div>
+            <div class="cfg-row"><span class="cfg-k">GET endpoint</span><span class="cfg-v" id="disp-get" style="font-size:11px;color:var(--green)">…/v2/getOrders</span></div>
+            <div class="cfg-row"><span class="cfg-k">Subscription key</span><span class="cfg-v" id="disp-key" style="color:var(--muted)">none</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+let CFG = {
+  post: 'https://orders-gateway-bp.azure-api.net/v1/createOrder',
+  get:  'https://orders-gateway-bp.azure-api.net/v2/getOrders',
+  key:  ''
+};
+let allOrders = [];
+
+// ── NAV ──────────────────────────────────────────────────
+const TITLES = {
+  dashboard:'Welcome back, Praneeth',
+  orders:'Order Directory',
+  submit:'Submit New Order',
+  pipeline:'Pipeline Architecture',
+  logs:'Activity Logs',
+  config:'Configuration'
+};
+function nav(id, el) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  document.getElementById('page-title').textContent = TITLES[id]||id;
+  document.getElementById('crumb-leaf').textContent = id;
+}
+
+// ── TOAST ────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const icons={info:'ℹ️',success:'✅',error:'❌',warn:'⚠️'};
+  const el = document.createElement('div');
+  el.className='toast '+type;
+  el.innerHTML=`<span class="ti">${icons[type]}</span><span class="tm">${msg}</span><span class="tc" onclick="this.parentElement.remove()">×</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{el.style.cssText='opacity:0;transform:translateX(16px);transition:all .3s';setTimeout(()=>el.remove(),310)},4000);
+}
+
+// ── LOGS ─────────────────────────────────────────────────
+function addLog(level, msg) {
+  const ts = new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const box = document.getElementById('log-box');
+  const line = document.createElement('div');
+  line.className='ll '+level;
+  line.innerHTML=`<span class="ts">${ts}</span><span class="lv">[${level.toUpperCase()}]</span><span>${msg}</span>`;
+  box.appendChild(line);
+  box.scrollTop=box.scrollHeight;
+}
+function clearLogs(){document.getElementById('log-box').innerHTML='';addLog('info','Logs cleared');}
+
+// ── LOAD ORDERS ──────────────────────────────────────────
+async function loadOrders() {
+  addLog('info','GET '+CFG.get);
+  const hdrs={'Content-Type':'application/json'};
+  if(CFG.key) hdrs['Ocp-Apim-Subscription-Key']=CFG.key;
+  try {
+    const r = await fetch(CFG.get,{headers:hdrs});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const raw = await r.json();
+    allOrders = Array.isArray(raw)?raw:(raw.orders||raw.value||raw.data||[]);
+    addLog('ok',`Loaded ${allOrders.length} orders`);
+    document.getElementById('nb-orders').textContent = allOrders.length;
+    renderAll();
+  } catch(e) {
+    addLog('err','GET failed: '+e.message+' — demo data shown');
+    toast('Could not reach getOrders. Showing demo data.','warn');
+    allOrders = demo();
+    document.getElementById('nb-orders').textContent = allOrders.length;
+    renderAll();
+  }
+}
+
+function demo(){
+  const P=['Laptop','Monitor','Keyboard','Desk Chair','Webcam','SSD Drive','Headphones','Tablet'];
+  const C=['C001','C002','C003','PRANEETH_FINAL','C_TEST','C005'];
+  const S=['CREATED','CREATED','COMPLETED','COMPLETED','COMPLETED','PROCESSING','FAILED'];
+  return Array.from({length:14},(_,i)=>({
+    id:i+1,customer_id:C[i%C.length],product_name:P[i%P.length],
+    quantity:Math.ceil(Math.random()*4),status:S[i%S.length],
+    created_at:new Date(Date.now()-i*3600000).toISOString()
+  }));
+}
+
+// ── RENDER ───────────────────────────────────────────────
+function renderAll(){renderStats();renderDashTable();renderOrdersTable();renderDonut();renderBars();}
+
+function renderStats(){
+  const t=allOrders.length;
+  const done=allOrders.filter(o=>n(o.status)==='COMPLETED').length;
+  const pipe=allOrders.filter(o=>['CREATED','PROCESSING'].includes(n(o.status))).length;
+  const today=allOrders.filter(o=>o.created_at&&new Date(o.created_at).toDateString()===new Date().toDateString()).length;
+  document.getElementById('m-total').textContent=t;
+  document.getElementById('m-done').textContent=done;
+  document.getElementById('m-pipe').textContent=pipe;
+  document.getElementById('d-today').textContent='↑ '+today+' today';
+  document.getElementById('d-pct').textContent=(t?Math.round(done/t*100):0)+'%';
+  document.getElementById('m-sub-total').textContent=`${done} completed, ${pipe} in progress`;
+}
+
+function n(s){return(s||'CREATED').toUpperCase()}
+
+function bst(s){
+  const c=(s||'CREATED').toLowerCase();
+  return `<span class="bst ${c}"><span class="bd"></span>${(s||'CREATED').toUpperCase()}</span>`;
+}
+
+function renderDashTable(){
+  const w=document.getElementById('dash-tbl-wrap');
+  if(!allOrders.length){w.innerHTML='<div class="empty"><div class="ei">📭</div><p>No orders yet</p></div>';return;}
+  const rows=allOrders.slice(0,8).map(o=>`<tr>
+    <td class="idd" style="padding-left:20px">#${o.id||o.order_id||'—'}</td>
+    <td class="bold">${o.customer_id||o.customer||'—'}</td>
+    <td>${o.product_name||o.product||'—'}</td>
+    <td class="mono">${o.quantity||o.qty||1}</td>
+    <td style="padding-right:20px">${bst(o.status)}</td>
+  </tr>`).join('');
+  w.innerHTML=`<div class="tbl-wrap"><table class="tbl"><thead><tr>
+    <th style="padding-left:20px">Order ID</th><th>Customer</th><th>Product</th><th>Qty</th><th style="padding-right:20px">Status</th>
+  </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function applyFilter(){
+  const v=document.getElementById('filter-status').value;
+  renderOrdersTable(v?allOrders.filter(o=>n(o.status)===v):allOrders);
+}
+
+function renderOrdersTable(list){
+  list=list||allOrders;
+  const w=document.getElementById('orders-tbl-wrap');
+  if(!list.length){w.innerHTML='<div class="empty"><div class="ei">📭</div><p>No orders match filter</p></div>';return;}
+  const rows=list.map(o=>`<tr>
+    <td class="idd" style="padding-left:20px">#${o.id||o.order_id||'—'}</td>
+    <td class="bold">${o.customer_id||o.customer||'—'}</td>
+    <td>${o.product_name||o.product||'—'}</td>
+    <td class="mono">${o.quantity||o.qty||1}</td>
+    <td>${bst(o.status)}</td>
+    <td class="mono" style="padding-right:20px;color:var(--muted)">${o.created_at?new Date(o.created_at).toLocaleString():'—'}</td>
+  </tr>`).join('');
+  w.innerHTML=`<div class="tbl-wrap"><table class="tbl"><thead><tr>
+    <th style="padding-left:20px">Order ID</th><th>Customer</th><th>Product</th><th>Qty</th><th>Status</th><th style="padding-right:20px">Created At</th>
+  </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderDonut(){
+  const C={CREATED:0,COMPLETED:0,PROCESSING:0,FAILED:0};
+  allOrders.forEach(o=>{const k=n(o.status);if(C[k]!==undefined)C[k]++;});
+  const total=allOrders.length||1,circ=251.2;
+  let off=0;
+  [['created','CREATED'],['completed','COMPLETED'],['processing','PROCESSING'],['failed','FAILED']].forEach(([id,key])=>{
+    const arc=C[key]/total*circ;
+    const el=document.getElementById('d-'+id);
+    el.style.strokeDasharray=`${arc} ${circ}`;
+    el.style.strokeDashoffset=`-${off}`;
+    off+=arc;
+    document.getElementById('l-'+id).textContent=C[key];
+  });
+}
+
+function renderBars(){
+  const COLS=['#4361ee','#0891b2','#16a34a','#d97706','#dc2626'];
+  const pm={};
+  allOrders.forEach(o=>{const k=o.product_name||o.product||'?';pm[k]=(pm[k]||0)+1;});
+  const ps=Object.entries(pm).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const pmax=ps[0]?ps[0][1]:1;
+  document.getElementById('prod-bars').innerHTML=ps.length?ps.map(([name,cnt],i)=>`
+    <div class="bar-row">
+      <span class="bar-lbl" title="${name}">${name}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${cnt/pmax*100}%;background:${COLS[i]}"></div></div>
+      <span class="bar-num">${cnt}</span>
+    </div>`).join(''):'<div class="empty"><p>No data</p></div>';
+  const cm={};
+  allOrders.forEach(o=>{const k=o.customer_id||o.customer||'?';cm[k]=(cm[k]||0)+1;});
+  const cs=Object.entries(cm).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const cmax=cs[0]?cs[0][1]:1;
+  document.getElementById('cust-bars').innerHTML=cs.length?cs.map(([name,cnt],i)=>`
+    <div class="bar-row">
+      <span class="bar-lbl" title="${name}">${name}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${cnt/cmax*100}%;background:${COLS[i]}"></div></div>
+      <span class="bar-num">${cnt}</span>
+    </div>`).join(''):'<div class="empty"><p>No data</p></div>';
+}
+
+// ── SUBMIT ───────────────────────────────────────────────
+function updatePreview(){
+  const c=document.getElementById('f-cust')?.value||'—';
+  const p=document.getElementById('f-prod')?.value||'—';
+  const q=parseInt(document.getElementById('f-qty')?.value)||1;
+  const el=document.getElementById('req-prev');
+  if(el)el.textContent=JSON.stringify({customer_id:c,product:p,quantity:q},null,2);
+}
+document.addEventListener('input',updatePreview);
+
+async function submitOrder(){
+  const customer_id=document.getElementById('f-cust').value.trim();
+  const product=document.getElementById('f-prod').value.trim();
+  const quantity=parseInt(document.getElementById('f-qty').value)||1;
+  if(!customer_id||!product){toast('Fill in Customer ID and Product','error');return;}
+  const btn=document.getElementById('sub-btn');
+  const lbl=document.getElementById('sub-label');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>&nbsp;Sending…';
+  lbl.textContent='sending…';lbl.style.color='var(--amber)';
+  addLog('info','POST → '+CFG.post);
+  addLog('info','Payload: '+JSON.stringify({customer_id,product,quantity}));
+  const hdrs={'Content-Type':'application/json'};
+  if(CFG.key)hdrs['Ocp-Apim-Subscription-Key']=CFG.key;
+  try{
+    const r=await fetch(CFG.post,{method:'POST',headers:hdrs,body:JSON.stringify({customer_id,product,quantity})});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json().catch(()=>({}));
+    addLog('ok','Accepted: '+(d.message||JSON.stringify(d)));
+    toast('Order submitted successfully!','success');
+    lbl.textContent='sent ✓';lbl.style.color='var(--green)';
+    clearForm();setTimeout(loadOrders,1800);
+  }catch(e){
+    addLog('err','POST failed: '+e.message);
+    toast('Error: '+e.message,'error');
+    lbl.textContent='error';lbl.style.color='var(--red)';
+  }
+  btn.disabled=false;btn.innerHTML='⬡ &nbsp;Send Order';
+  setTimeout(()=>{lbl.textContent='ready';lbl.style.color='var(--muted)';},3500);
+}
+function clearForm(){
+  ['f-cust','f-prod'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-qty').value='1';updatePreview();
+}
+
+// ── CONFIG ────────────────────────────────────────────────
+function saveConfig(){
+  CFG.post=document.getElementById('cfg-post').value.trim();
+  CFG.get=document.getElementById('cfg-get').value.trim();
+  CFG.key=document.getElementById('cfg-key').value.trim();
+  try{const u=new URL(CFG.post);document.getElementById('disp-post').textContent=u.pathname;}catch{}
+  try{const u=new URL(CFG.get);document.getElementById('disp-get').textContent=u.pathname;document.getElementById('disp-get').style.color='var(--green)';}catch{document.getElementById('disp-get').style.color='var(--amber)';}
+  document.getElementById('disp-key').textContent=CFG.key?'••••••••':'none';
+  toast('Configuration saved','success');
+  addLog('info','Config updated — GET: '+CFG.get);
+}
+
+function refreshAll(){addLog('info','Manual refresh');loadOrders();toast('Refreshed','info');}
+
+// ── INIT ─────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  addLog('info','OrderFlow Dashboard loaded');
+  addLog('info','POST → '+CFG.post);
+  addLog('info','GET  → '+CFG.get);
+  loadOrders();updatePreview();
+});
+</script>
+</body>
+</html>
